@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reserve Parking Spot | Smart Parking</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <div class="header-left">
+                <h1 class="logo">Smart Parking</h1>
+                <nav class="nav-menu">
+                    <a href="/user" class="nav-link">Dashboard</a>
+                    <a href="#reservation" class="nav-link active">Reserve Spot</a>
+                    <a href="/user#reservations" class="nav-link">My Reservations</a>
+                </nav>
+            </div>
+            <div class="header-right">
+                <span class="user-info">Welcome, {{ user.name if user else 'User' }}</span>
+                <a href="/logout" class="btn-secondary">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="reservation-container">
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step active" id="step1">
+                    <span class="step-number">1</span>
+                    <span class="step-title">Select Spot</span>
+                </div>
+                <div class="step" id="step2">
+                    <span class="step-number">2</span>
+                    <span class="step-title">Choose Time</span>
+                </div>
+                <div class="step" id="step3">
+                    <span class="step-number">3</span>
+                    <span class="step-title">Payment</span>
+                </div>
+                <div class="step" id="step4">
+                    <span class="step-number">4</span>
+                    <span class="step-title">Confirm</span>
+                </div>
+            </div>
+
+            <!-- Step 1: Select Spot -->
+            <div class="reservation-step" id="step1-content">
+                <h2>Select Your Parking Spot</h2>
+                
+                <!-- Search Filters -->
+                <div class="search-filters">
+                    <div class="filter-group">
+                        <label for="city-filter">City:</label>
+                        <select id="city-filter" onchange="loadMunicipalities()">
+                            <option value="">Select City</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="municipality-filter">Municipality:</label>
+                        <select id="municipality-filter" onchange="loadZones()" disabled>
+                            <option value="">Select Municipality</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="zone-filter">Zone:</label>
+                        <select id="zone-filter" onchange="loadParkingLots()" disabled>
+                            <option value="">Select Zone</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="date-filter">Date:</label>
+                        <input type="date" id="date-filter" onchange="filterSpots()">
+                    </div>
+                    <div class="filter-group">
+                        <label for="time-filter">Time:</label>
+                        <input type="time" id="time-filter" onchange="filterSpots()">
+                    </div>
+                    <div class="filter-group">
+                        <label for="price-filter">Max Price/Hour:</label>
+                        <select id="price-filter" onchange="filterSpots()">
+                            <option value="">Any Price</option>
+                            <option value="1000">1,000 GNF or less</option>
+                            <option value="2000">2,000 GNF or less</option>
+                            <option value="5000">5,000 GNF or less</option>
+                            <option value="10000">10,000 GNF or less</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Available Spots Grid -->
+                <div class="spots-grid" id="spots-container">
+                    {% for spot in available_spots %}
+                    <div class="spot-card" data-city="{{ spot.city_id }}" data-price="{{ spot.price_per_hour }}">
+                        <div class="spot-header">
+                            <h3>Spot {{ spot.slot_number }}</h3>
+                            <span class="spot-status available">Available</span>
+                        </div>
+                        <div class="spot-details">
+                            <p><strong>Location:</strong> {{ spot.location }}</p>
+                            <p><strong>City:</strong> {{ spot.city_name }}</p>
+                            <p><strong>Price:</strong> {{ spot.price_per_hour|default('0') }} GNF/hour</p>
+                            <p><strong>Type:</strong> {{ spot.type }}</p>
+                            <p><strong>Features:</strong> {{ spot.features }}</p>
+                        </div>
+                        <div class="spot-actions">
+                            <button class="btn-primary" onclick="selectSpot({{ spot.slot_id }}, '{{ spot.slot_number }}', {{ spot.price_per_hour }})">
+                                Select This Spot
+                            </button>
+                            <button class="btn-secondary" onclick="viewSpotDetails({{ spot.slot_id }})">
+                                View Details
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Step 2: Choose Time -->
+            <div class="reservation-step" id="step2-content" style="display: none;">
+                <h2>Choose Your Parking Time</h2>
+                
+                <div class="selected-spot-info">
+                    <h3>Selected Spot: <span id="selected-spot-number"></span></h3>
+                    <p>Price: {{ selectedSpotPrice|default('0') }} GNF/hour</p>
+                </div>
+
+                <div class="time-selection">
+                    <div class="form-group">
+                        <label for="start-date">Start Date:</label>
+                        <input type="date" id="start-date" required min="{{ today_date }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="start-time">Start Time:</label>
+                        <input type="time" id="start-time" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="end-date">End Date:</label>
+                        <input type="date" id="end-date" required min="{{ today_date }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="end-time">End Time:</label>
+                        <input type="time" id="end-time" required>
+                    </div>
+                    
+                    <div class="duration-info">
+                        <p><strong>Duration:</strong> <span id="duration-display">0 hours</span></p>
+                        <p><strong>Total Price:</strong> $<span id="total-price">0.00</span></p>
+                    </div>
+                </div>
+
+                <div class="step-actions">
+                    <button class="btn-secondary" onclick="goToStep(1)">Back</button>
+                    <button class="btn-primary" onclick="goToStep(3)" id="continue-to-payment">Continue to Payment</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Payment -->
+            <div class="reservation-step" id="step3-content" style="display: none;">
+                <h2>Payment Information</h2>
+                
+                <div class="reservation-summary">
+                    <h3>Reservation Summary</h3>
+                    <div class="summary-details">
+                        <p><strong>Spot:</strong> <span id="summary-spot"></span></p>
+                        <p><strong>Date:</strong> <span id="summary-date"></span></p>
+                        <p><strong>Time:</strong> <span id="summary-time"></span></p>
+                        <p><strong>Duration:</strong> <span id="summary-duration"></span></p>
+                        <p><strong>Total Price:</strong> $<span id="summary-price"></span></p>
+                    </div>
+                </div>
+
+                <div class="payment-section">
+                    <div class="form-group">
+                        <label for="vehicle-plate">Vehicle Plate Number:</label>
+                        <input type="text" id="vehicle-plate" value="{{ user.vehicle_plate if user else '' }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="payment-method">Payment Method:</label>
+                        <select id="payment-method" required>
+                            <option value="">Select Payment Method</option>
+                            <option value="ORANGE_MONEY">Orange Money</option>
+                            <option value="MTN_MONEY">MTN Money</option>
+                            <option value="CASH">Cash</option>
+                            <option value="CARD">Card</option>
+                        </select>
+                    </div>
+                    
+                    <div class="payment-details" id="payment-details" style="display: none;">
+                        <div class="form-group">
+                            <label for="phone-number">Phone Number (for mobile money):</label>
+                            <input type="tel" id="phone-number" value="{{ user.phone if user else '' }}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-actions">
+                    <button class="btn-secondary" onclick="goToStep(2)">Back</button>
+                    <button class="btn-primary" onclick="goToStep(4)">Confirm Reservation</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Confirmation -->
+            <div class="reservation-step" id="step4-content" style="display: none;">
+                <h2>Confirm Your Reservation</h2>
+                
+                <div class="confirmation-summary">
+                    <h3>Final Reservation Details</h3>
+                    <div class="confirmation-details">
+                        <p><strong>Reservation ID:</strong> <span id="confirmation-id">Will be generated</span></p>
+                        <p><strong>Spot:</strong> <span id="confirmation-spot"></span></p>
+                        <p><strong>Date:</strong> <span id="confirmation-date"></span></p>
+                        <p><strong>Time:</strong> <span id="confirmation-time"></span></p>
+                        <p><strong>Duration:</strong> <span id="confirmation-duration"></span></p>
+                        <p><strong>Vehicle:</strong> <span id="confirmation-vehicle"></span></p>
+                        <p><strong>Payment Method:</strong> <span id="confirmation-payment"></span></p>
+                        <p><strong>Total Price:</strong> $<span id="confirmation-price"></span></p>
+                    </div>
+                </div>
+
+                <div class="terms-checkbox">
+                    <label>
+                        <input type="checkbox" id="terms-accepted" required>
+                        I agree to the terms and conditions of the parking reservation
+                    </label>
+                </div>
+
+                <div class="step-actions">
+                    <button class="btn-secondary" onclick="goToStep(3)">Back</button>
+                    <button class="btn-primary" onclick="submitReservation()" id="submit-reservation">Confirm & Pay</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Spot Details Modal -->
+    <div id="spotDetailsModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Spot Details</h3>
+            <div id="spot-details-content">
+                <!-- Spot details will be loaded here -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('spotDetailsModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading-spinner" style="display:none;">Loading...</div>
+
+    <script>
+        let selectedSpot = null;
+        let selectedSpotPrice = 0;
+        let reservationData = {};
+
+        // Step navigation
+        function goToStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.reservation-step').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+            
+            // Show selected step
+            document.getElementById(`step${step}-content`).style.display = 'block';
+            document.getElementById(`step${step}`).classList.add('active');
+            
+            // Update step content based on current step
+            if (step === 2) {
+                updateStep2Content();
+            } else if (step === 3) {
+                updateStep3Content();
+            } else if (step === 4) {
+                updateStep4Content();
+            }
+        }
+
+        // Spot selection
+        function selectSpot(slotId, slotNumber, price) {
+            selectedSpot = slotId;
+            selectedSpotPrice = price;
+            reservationData.slot_id = slotId;
+            reservationData.slot_number = slotNumber;
+            reservationData.price_per_hour = price;
+            
+            goToStep(2);
+        }
+
+        // Filter spots
+        function filterSpots() {
+            const query = document.getElementById('spot-search').value.toLowerCase();
+            document.querySelectorAll('.spot-card').forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(query) ? '' : 'none';
+            });
+        }
+
+        // Update step 2 content
+        function updateStep2Content() {
+            if (selectedSpot) {
+                document.getElementById('selected-spot-number').textContent = reservationData.slot_number;
+                document.getElementById('selected-spot-price').textContent = reservationData.price_per_hour;
+            }
+        }
+
+        // Calculate duration and price
+        function calculateDuration() {
+            const startDate = document.getElementById('start-date').value;
+            const startTime = document.getElementById('start-time').value;
+            const endDate = document.getElementById('end-date').value;
+            const endTime = document.getElementById('end-time').value;
+            
+            if (startDate && startTime && endDate && endTime) {
+                const start = new Date(`${startDate}T${startTime}`);
+                const end = new Date(`${endDate}T${endTime}`);
+                const duration = (end - start) / (1000 * 60 * 60); // hours
+                
+                if (duration > 0) {
+                    const totalPrice = duration * selectedSpotPrice;
+                    document.getElementById('duration-display').textContent = `${duration.toFixed(1)} hours`;
+                    document.getElementById('total-price').textContent = totalPrice.toFixed(2);
+                    
+                    reservationData.start_time = start;
+                    reservationData.end_time = end;
+                    reservationData.duration = duration;
+                    reservationData.total_price = totalPrice;
+                }
+            }
+        }
+
+        // Update step 3 content
+        function updateStep3Content() {
+            document.getElementById('summary-spot').textContent = reservationData.slot_number;
+            document.getElementById('summary-date').textContent = reservationData.start_time.toDateString();
+            document.getElementById('summary-time').textContent = `${reservationData.start_time.toTimeString().slice(0,5)} - ${reservationData.end_time.toTimeString().slice(0,5)}`;
+            document.getElementById('summary-duration').textContent = `${reservationData.duration.toFixed(1)} hours`;
+            document.getElementById('summary-price').textContent = reservationData.total_price.toFixed(2);
+        }
+
+        // Update step 4 content
+        function updateStep4Content() {
+            document.getElementById('confirmation-spot').textContent = reservationData.slot_number;
+            document.getElementById('confirmation-date').textContent = reservationData.start_time.toDateString();
+            document.getElementById('confirmation-time').textContent = `${reservationData.start_time.toTimeString().slice(0,5)} - ${reservationData.end_time.toTimeString().slice(0,5)}`;
+            document.getElementById('confirmation-duration').textContent = `${reservationData.duration.toFixed(1)} hours`;
+            document.getElementById('confirmation-vehicle').textContent = document.getElementById('vehicle-plate').value;
+            document.getElementById('confirmation-payment').textContent = document.getElementById('payment-method').value;
+            document.getElementById('confirmation-price').textContent = reservationData.total_price.toFixed(2);
+        }
+
+        // Payment method change
+        document.getElementById('payment-method').addEventListener('change', function() {
+            const paymentDetails = document.getElementById('payment-details');
+            const method = this.value;
+            
+            if (method === 'ORANGE_MONEY' || method === 'MTN_MONEY') {
+                paymentDetails.style.display = 'block';
+            } else {
+                paymentDetails.style.display = 'none';
+            }
+        });
+
+        // Time calculation
+        document.getElementById('start-date').addEventListener('change', calculateDuration);
+        document.getElementById('start-time').addEventListener('change', calculateDuration);
+        document.getElementById('end-date').addEventListener('change', calculateDuration);
+        document.getElementById('end-time').addEventListener('change', calculateDuration);
+
+        // Submit reservation
+        function submitReservation() {
+            if (!document.getElementById('terms-accepted').checked) {
+                alert('Please accept the terms and conditions');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('slot_id', reservationData.slot_id);
+            formData.append('vehicle_plate', document.getElementById('vehicle-plate').value);
+            formData.append('start_time', reservationData.start_time.toISOString());
+            formData.append('end_time', reservationData.end_time.toISOString());
+            formData.append('total_price', reservationData.total_price);
+            formData.append('payment_method', document.getElementById('payment-method').value);
+            
+            fetch('/reservation/create', {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Reservation failed');
+            }).then(data => {
+                alert('Reservation created successfully! Reservation ID: ' + data.reservation_id);
+                window.location.href = '/user#reservations';
+            }).catch(error => {
+                alert('Error creating reservation: ' + error.message);
+            });
+        }
+
+        // Modal functions
+        function viewSpotDetails(slotId) {
+            // Load spot details via AJAX
+            fetch(`/spots/${slotId}/details`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('spot-details-content').innerHTML = `
+                        <p><strong>Spot Number:</strong> ${data.slot_number}</p>
+                        <p><strong>Location:</strong> ${data.location}</p>
+                        <p><strong>City:</strong> ${data.city_name}</p>
+                        <p><strong>Price:</strong> $${data.price_per_hour}/hour</p>
+                        <p><strong>Type:</strong> ${data.type}</p>
+                        <p><strong>Features:</strong> ${data.features}</p>
+                        <p><strong>Status:</strong> ${data.status}</p>
+                    `;
+                    document.getElementById('spotDetailsModal').style.display = 'block';
+                });
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Load municipalities based on city selection
+        function loadMunicipalities() {
+            const cityId = document.getElementById('city-filter').value;
+            console.log("Selected city ID:", cityId); // Debug
+            const municipalityFilter = document.getElementById('municipality-filter');
+            const zoneFilter = document.getElementById('zone-filter');
+            
+            if (!cityId) {
+                console.log("No city selected - resetting municipalities");
+                municipalityFilter.innerHTML = '<option value="">Select City First</option>';
+                municipalityFilter.disabled = true;
+                zoneFilter.innerHTML = '<option value="">Select Municipality First</option>';
+                zoneFilter.disabled = true;
+                return;
+            }
+
+            // Clear and disable dependent dropdowns
+            municipalityFilter.innerHTML = '<option value="">Select Municipality</option>';
+            municipalityFilter.disabled = true;
+            zoneFilter.innerHTML = '<option value="">Select Municipality First</option>';
+            zoneFilter.disabled = true;
+
+            fetch(`http://localhost:5001/municipalities/by-city/${cityId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.length > 0) {
+                        municipalityFilter.innerHTML = '<option value="">Select Municipality</option>';
+                        data.forEach(municipality => {
+                            const option = document.createElement('option');
+                            option.value = municipality.mun_id;
+                            option.textContent = municipality.name;
+                            municipalityFilter.appendChild(option);
+                        });
+                        municipalityFilter.disabled = false;
+                    } else {
+                        municipalityFilter.innerHTML = '<option value="">No municipalities available</option>';
+                        municipalityFilter.disabled = false;
+                    }
+                    // Always reset zone filter
+                    zoneFilter.innerHTML = '<option value="">Select Municipality First</option>';
+                    zoneFilter.disabled = true;
+                })
+                .catch(error => {
+                    console.error('Error loading municipalities:', error);
+                    municipalityFilter.innerHTML = '<option value="">Error loading municipalities</option>';
+                    municipalityFilter.disabled = false;
+                    zoneFilter.innerHTML = '<option value="">Select Municipality First</option>';
+                    zoneFilter.disabled = true;
+                });
+        }
+
+        // Load zones based on municipality selection
+        function loadZones() {
+            const municipalityFilter = document.getElementById('municipality-filter');
+            const municipalityId = municipalityFilter.value;
+            console.log("Current municipality selection:", {
+                selectedIndex: municipalityFilter.selectedIndex,
+                value: municipalityId,
+                options: municipalityFilter.options
+            });
+            const zoneFilter = document.getElementById('zone-filter');
+            zoneFilter.innerHTML = '<option value="">Select Zone</option>';
+            zoneFilter.disabled = true;
+
+            if (!municipalityId || municipalityId === "undefined") {
+                console.error("Invalid municipality ID:", municipalityId);
+                zoneFilter.innerHTML = '<option value="">Select Municipality First</option>';
+                zoneFilter.disabled = true;
+                return;
+            }
+
+            fetch(`http://localhost:5001/zones/by-municipality/${municipalityId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.length > 0) {
+                        data.forEach(zone => {
+                            const option = document.createElement('option');
+                            option.value = zone.zone_id;
+                            option.textContent = zone.name;
+                            zoneFilter.appendChild(option);
+                        });
+                        zoneFilter.disabled = false;
+                    } else {
+                        zoneFilter.innerHTML = '<option value=\"\">No zones available</option>';
+                        zoneFilter.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading zones:', error);
+                    zoneFilter.innerHTML = '<option value=\"\">Error loading zones</option>';
+                    zoneFilter.disabled = false;
+                });
+        }
+
+        // Load parking lots based on zone selection
+        function loadParkingLots() {
+            const zoneId = document.getElementById('zone-filter').value;
+            const spotsContainer = document.getElementById('spots-container');
+            spotsContainer.innerHTML = '<p>Loading parking lots...</p>'; // Clear previous spots
+
+            if (zoneId) {
+                fetch(`http://localhost:5001/spots/by-zone/${zoneId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.length === 0) {
+                            spotsContainer.innerHTML = '<p>No parking spots available in this zone.</p>';
+                        } else {
+                            spotsContainer.innerHTML = ''; // Clear loading message
+                            data.forEach(spot => {
+                                const spotCard = document.createElement('div');
+                                spotCard.className = 'spot-card';
+                                spotCard.dataset.city = spot.city_id;
+                                spotCard.dataset.municipality = spot.municipality_id;
+                                spotCard.dataset.zone = spot.zone_id;
+                                spotCard.dataset.price = spot.price_per_hour;
+
+                                spotCard.innerHTML = `
+                                    <div class="spot-header">
+                                        <h3>Spot ${spot.slot_number}</h3>
+                                        <span class="spot-status available">Available</span>
+                                    </div>
+                                    <div class="spot-details">
+                                        <p><strong>Location:</strong> ${spot.location}</p>
+                                        <p><strong>City:</strong> ${spot.city_name}</p>
+                                        <p><strong>Price:</strong> ${spot.price_per_hour} GNF/hour</p>
+                                        <p><strong>Type:</strong> ${spot.type}</p>
+                                        <p><strong>Features:</strong> ${spot.features}</p>
+                                    </div>
+                                    <div class="spot-actions">
+                                        <button class="btn-primary" onclick="selectSpot(${spot.slot_id}, 'Spot ${spot.slot_number}', ${spot.price_per_hour})">
+                                            Select This Spot
+                                        </button>
+                                        <button class="btn-secondary" onclick="viewSpotDetails(${spot.slot_id})">
+                                            View Details
+                                        </button>
+                                    </div>
+                                `;
+                                spotsContainer.appendChild(spotCard);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading parking lots:', error);
+                        spotsContainer.innerHTML = '<p>Error loading parking lots.</p>';
+                    });
+            } else {
+                spotsContainer.innerHTML = '<p>Please select a zone first.</p>';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('start-date').value = today;
+            document.getElementById('end-date').value = today;
+            
+            // Set default time to current time
+            const now = new Date();
+            const currentTime = now.toTimeString().slice(0,5);
+            document.getElementById('start-time').value = currentTime;
+            
+            // Set end time to 2 hours later
+            const endTime = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+            document.getElementById('end-time').value = endTime.toTimeString().slice(0,5);
+
+            // Initial load of cities
+            loadCities();
+
+            // Save on change
+            document.querySelectorAll('input, select').forEach(el => {
+                el.addEventListener('change', () => {
+                    localStorage.setItem(el.id, el.value);
+                });
+            });
+
+            // Restore on load
+            window.addEventListener('DOMContentLoaded', () => {
+                document.querySelectorAll('input, select').forEach(el => {
+                    if (localStorage.getItem(el.id)) {
+                        el.value = localStorage.getItem(el.id);
+                    }
+                });
+            });
+        });
+
+        // Load cities function
+        function loadCities() {
+            fetch('http://localhost:5001/cities')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const cityFilter = document.getElementById('city-filter');
+                    cityFilter.innerHTML = '<option value="">Select City</option>';
+                    data.forEach(city => {
+                        const option = document.createElement('option');
+                        option.value = city.city_id;
+                        option.textContent = city.name;
+                        cityFilter.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading cities:', error);
+                    document.getElementById('city-filter').innerHTML = '<option value="">Error loading cities</option>';
+                });
+        }
+
+        function showSpinner(show) {
+            document.getElementById('loading-spinner').style.display = show ? 'block' : 'none';
+        }
+
+        function validateDateTime() {
+            const startDate = document.getElementById('start-date').value;
+            const startTime = document.getElementById('start-time').value;
+            const endDate = document.getElementById('end-date').value;
+            const endTime = document.getElementById('end-time').value;
+
+            const start = new Date(`${startDate}T${startTime}`);
+            const end = new Date(`${endDate}T${endTime}`);
+            const now = new Date();
+
+            if (start < now) {
+                alert("Start time cannot be in the past");
+                return false;
+            }
+            if (end <= start) {
+                alert("End time must be after start time");
+                return false;
+            }
+            return true;
+        }
+
+        function validateVehiclePlate(plate) {
+            // Example: 3 letters, dash, 3 numbers (ABC-123)
+            const plateRegex = /^[A-Z]{3}-\d{3}$/i;
+            if (!plateRegex.test(plate)) {
+                alert("Invalid vehicle plate format. Example: ABC-123");
+                return false;
+            }
+            return true;
+        }
+
+        function validatePhoneNumber(phone) {
+            const phoneRegex = /^(6|7|8)\d{8}$/;
+            if (!phoneRegex.test(phone)) {
+                alert("Invalid phone number. It should start with 6, 7, or 8 and be 9 digits.");
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Smart Parking</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-left">
+            <div class="login-content">
+                <h1>Logging into your account</h1>
+                <p class="login-subtitle">Enter your email or phone number and password to log in to your account.</p>
+                
+                <form method="POST" action="/login" class="login-form">
+                    <div class="form-group">
+                        <label for="email">Email address</label>
+                        <input type="email" id="email" name="email" placeholder="Enter your email address">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">Phone number</label>
+                        <input type="tel" id="phone" name="phone" placeholder="Enter your phone number">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary btn-full">Continue</button>
+                </form>
+                
+                <div class="divider">
+                    <span>or continue with</span>
+                </div>
+                
+                <div class="social-login">
+                    <button class="social-btn facebook">
+                        <span class="social-icon">📘</span>
+                        Facebook
+                    </button>
+                    <button class="social-btn google">
+                        <span class="social-icon">🔍</span>
+                        Google
+                    </button>
+                    <button class="social-btn apple">
+                        <span class="social-icon">🍎</span>
+                        Apple
+                    </button>
+                </div>
+                
+                <div class="login-footer">
+                    <a href="#privacy">Privacy Policy</a>
+                    <span class="separator">·</span>
+                    <a href="#terms">Terms of Service</a>
+                    <span class="separator">·</span>
+                    <a href="#licenses">Software Licenses</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="login-right">
+            <div class="signup-content">
+                <h2>First time sign in</h2>
+                <p>Create your account to get a parking reservations.</p>
+                <a href="/register" class="btn-secondary btn-full">Create Account</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

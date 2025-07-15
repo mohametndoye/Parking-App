@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <div class="header-left">
+                <h1 class="logo">Smart Parking</h1>
+                <nav class="nav-menu">
+                    <a href="#how-it-works" class="nav-link">How it works</a>
+                    <a href="#reserve" class="nav-link">Reserve</a>
+                    <a href="#support" class="nav-link">Support</a>
+                </nav>
+            </div>
+            <div class="header-right">
+                <div class="auth-controls">
+                    <a href="/login" class="btn-secondary">Sign in</a>
+                    <a href="/login" class="btn-primary">Log in</a>
+                </div>
+                <div class="language-toggle">
+                    <button class="lang-btn active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="fr">FR</button>
+                </div>
+                <button id="theme-toggle" aria-label="Toggle light/dark mode">🌙</button>
+            </div>
+        </div>
+    </header>
+    <main class="hero-section">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-left">
+                    <h1 class="hero-title">Smart Parking</h1>
+                    <h2>Manage and reserve your parking spot with ease</h2>
+                    <p>Our platform allows you to reserve smart parking spots, manage city zones, and optimize urban mobility in your city.</p>
+                    <a href="/login" class="btn-primary">Get Started</a>
+                </div>
+                <div class="hero-right">
+                    <h3>Available Cities and Services</h3>
+                    <div class="cities-grid">
+                        <div class="city-card">
+                            <div class="city-image">
+                                <img src="{{ url_for('static', filename='images/conakry.jpg') }}" alt="Conakry" onerror="this.style.display='none'">
+                                <div class="city-placeholder">🏙️</div>
+                            </div>
+                            <h4>Conakry</h4>
+                            <p>Capital city of Guinea</p>
+                        </div>
+                        <div class="city-card">
+                            <div class="city-image">
+                                <img src="{{ url_for('static', filename='images/nzerekore.jpg') }}" alt="Nzérékoré" onerror="this.style.display='none'">
+                                <div class="city-placeholder">🌳</div>
+                            </div>
+                            <h4>Nzérékoré</h4>
+                            <p>Forest region of Guinea</p>
+                        </div>
+                        <div class="city-card">
+                            <div class="city-image">
+                                <img src="{{ url_for('static', filename='images/kankan.jpg') }}" alt="Kankan" onerror="this.style.display='none'">
+                                <div class="city-placeholder">🏛️</div>
+                            </div>
+                            <h4>Kankan</h4>
+                            <p>Upper Guinea region</p>
+                        </div>
+                        <div class="city-card">
+                            <div class="city-image">
+                                <img src="{{ url_for('static', filename='images/kindia.jpg') }}" alt="Kindia" onerror="this.style.display='none'">
+                                <div class="city-placeholder">⛰️</div>
+                            </div>
+                            <h4>Kindia</h4>
+                            <p>Kindia region</p>
+                        </div>
+                        <div class="city-card">
+                            <div class="city-image">
+                                <img src="{{ url_for('static', filename='images/labe.jpg') }}" alt="Labé" onerror="this.style.display='none'">
+                                <div class="city-placeholder">🏔️</div>
+                            </div>
+                            <h4>Labé</h4>
+                            <p>Middle Guinea region</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <h3>Navigation</h3>
+                    <ul class="footer-nav">
+                        <li><a href="#support">Support</a></li>
+                        <li><a href="#faq">Foire aux questions</a></li>
+                        <li><a href="#rent">Louez votre stationnement</a></li>
+                        <li><a href="#terms">Conditions d'utilisation</a></li>
+                        <li><a href="#privacy">Politique de confidentialité</a></li>
+                        <li><a href="#cookies">Politique de témoins</a></li>
+                        <li><a href="#about">À propos</a></li>
+                        <li><a href="#blog">Blogue</a></li>
+                        <li><a href="/admin/dashboard">Connexion au tableau de bord</a></li>
+                    </ul>
+                </div>
+                <div class="footer-right">
+                    <h3>Office locations</h3>
+                    <div class="office-locations">
+                        <div class="office">
+                            <h4>Montréal</h4>
+                            <p>1136A ave. Van Horne<br>Montréal Qc H2V 1J8</p>
+                        </div>
+                        <div class="office">
+                            <h4>Québec</h4>
+                            <p>190-b, Dorchester Bureau 50.3<br>Quebec, Qc G1K 5Y9</p>
+                        </div>
+                        <div class="office">
+                            <h4>Gatineau</h4>
+                            <p>25, rue de Villebois<br>Gatineau, QC J8T 8J7</p>
+                        </div>
+                        <div class="office">
+                            <h4>Ottawa</h4>
+                            <p>2250 Gladwin Crescent<br>Ottawa, ON K1B 4S6</p>
+                        </div>
+                        <div class="office">
+                            <h4>Toronto</h4>
+                            <p>150 Ferrand Dr, 6th Floor<br>Toronto, ON M3C 3E5</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Smart Parking. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+    <script>
+    // Theme toggle logic
+    const toggle = document.getElementById('theme-toggle');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    function setTheme(dark) {
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+        toggle.textContent = dark ? '☀️' : '🌙';
+    }
+    // Initial theme
+    setTheme(prefersDark);
+    toggle.addEventListener('click', () => {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        setTheme(!isDark);
+    });
+
+    // Language toggle logic
+    const langBtns = document.querySelectorAll('.lang-btn');
+    langBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            langBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            // Add language switching logic here
+        });
+    });
+    </script>
+</body>
+</html>

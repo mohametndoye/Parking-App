@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard | Smart Parking</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <div class="header-left">
+                <h1 class="logo">Smart Parking</h1>
+                <nav class="nav-menu">
+                    <a href="#dashboard" class="nav-link">Dashboard</a>
+                    <a href="#parking" class="nav-link">Find Parking</a>
+                    <a href="#reservations" class="nav-link">My Reservations</a>
+                    <a href="#profile" class="nav-link">Profile</a>
+                </nav>
+            </div>
+            <div class="header-right">
+                <span class="user-info">Welcome, {{ user.name if user else 'User' }}</span>
+                <a href="/logout" class="btn-secondary">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Dashboard Overview -->
+        <section id="dashboard" class="dashboard-section">
+            <h2>Dashboard Overview</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Active Reservations</h3>
+                    <p class="stat-number">{{ active_reservations|default(0) }}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Spent</h3>
+                    <p class="stat-number">{{ total_spent|default('0 GNF') }}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Available Spots</h3>
+                    <p class="stat-number">{{ available_spots|default(0) }}</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Find Parking Section -->
+        <section id="parking" class="parking-section">
+            <h2>Find Available Parking Spots</h2>
+            
+            <div class="find-parking-content">
+                <p>Browse and reserve available parking spots in your area.</p>
+                <button class="btn-primary" onclick="findParkingSpots()">Find Parking Spots</button>
+            </div>
+        </section>
+
+        <!-- My Reservations Section -->
+        <section id="reservations" class="reservations-section">
+            <h2>My Reservations</h2>
+            <div class="reservations-list">
+                {% for reservation in user_reservations %}
+                <div class="reservation-card">
+                    <div class="reservation-header">
+                        <h3>Reservation #{{ reservation.reservation_id }}</h3>
+                        <span class="status-badge {{ reservation.status.lower() }}">
+                            {{ reservation.status }}
+                        </span>
+                    </div>
+                    <div class="reservation-details">
+                        <p><strong>Spot:</strong> {{ reservation.slot_number }}</p>
+                        <p><strong>Date:</strong> {{ reservation.start_time.strftime('%Y-%m-%d') }}</p>
+                        <p><strong>Time:</strong> {{ reservation.start_time.strftime('%H:%M') }} - {{ reservation.end_time.strftime('%H:%M') }}</p>
+                        <p><strong>Vehicle:</strong> {{ reservation.vehicle_plate }}</p>
+                        <p><strong>Total:</strong> {{ reservation.total_price|default('0') }} GNF</p>
+                        <p><strong>Payment:</strong> {{ reservation.payment_method }}</p>
+                    </div>
+                    <div class="reservation-actions">
+                        {% if reservation.status == 'PENDING' %}
+                        <button class="btn-primary" onclick="payReservation({{ reservation.reservation_id }})">
+                            Pay Now
+                        </button>
+                        <button class="btn-secondary" onclick="cancelReservation({{ reservation.reservation_id }})">
+                            Cancel
+                        </button>
+                        {% endif %}
+                        {% if reservation.status == 'PAID' %}
+                        <button class="btn-secondary" onclick="viewQRCode({{ reservation.reservation_id }})">
+                            View QR Code
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- User Profile Section -->
+        <section id="profile" class="profile-section">
+            <h2>My Information</h2>
+            <div class="profile-card">
+                <div class="profile-header">
+                    <h3>Personal Information</h3>
+                    <button class="btn-secondary" onclick="editProfile()">Edit</button>
+                </div>
+                <div class="profile-details">
+                    <div class="detail-row">
+                        <label>Name:</label>
+                        <span>{{ user.name if user else 'Not set' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <label>Email:</label>
+                        <span>{{ user.email if user else 'Not set' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <label>Phone:</label>
+                        <span>{{ user.phone if user else 'Not set' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <label>Vehicle Plate:</label>
+                        <span>{{ user.vehicle_plate if user else 'Not set' }}</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function findParkingSpots() {
+            // Redirect to reservation page
+            window.location.href = '/reservation';
+        }
+
+        function reserveSpot(slotId) {
+            window.location.href = `/reservation?slot_id=${slotId}`;
+        }
+
+        function viewSpotDetails(slotId) {
+            // Show spot details modal
+            alert('Spot details for slot ' + slotId);
+        }
+
+        function payReservation(reservationId) {
+            // Redirect to payment page
+            window.location.href = `/payment/${reservationId}`;
+        }
+
+        function cancelReservation(reservationId) {
+            if (confirm('Are you sure you want to cancel this reservation?')) {
+                fetch(`/reservation/${reservationId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    }
+                });
+            }
+        }
+
+        function viewQRCode(reservationId) {
+            // Show QR code modal
+            alert('QR Code for reservation ' + reservationId);
+        }
+
+        function editProfile() {
+            // Redirect to profile edit page
+            window.location.href = '/profile/edit';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .filter-group { margin: 10px 0; }
+        select { padding: 5px; margin-left: 10px; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Frontend API Test</h1>
+    
+    <div class="filter-group">
+        <label for="city-filter">City:</label>
+        <select id="city-filter" onchange="loadMunicipalities()">
+            <option value="">Select City</option>
+        </select>
+    </div>
+    
+    <div class="filter-group">
+        <label for="municipality-filter">Municipality:</label>
+        <select id="municipality-filter" onchange="loadZones()" disabled>
+            <option value="">Select Municipality</option>
+        </select>
+    </div>
+    
+    <div class="filter-group">
+        <label for="zone-filter">Zone:</label>
+        <select id="zone-filter" onchange="loadParkingLots()" disabled>
+            <option value="">Select Zone</option>
+        </select>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        // Load cities function
+        function loadCities() {
+            console.log('Loading cities...');
+            fetch('http://localhost:5001/cities')
+                .then(response => {
+                    console.log('Cities response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Cities data:', data);
+                    const cityFilter = document.getElementById('city-filter');
+                    cityFilter.innerHTML = '<option value="">Select City</option>';
+                    data.forEach(city => {
+                        const option = document.createElement('option');
+                        option.value = city.city_id;
+                        option.textContent = city.name;
+                        cityFilter.appendChild(option);
+                    });
+                    document.getElementById('results').innerHTML = '<div class="success">Cities loaded successfully!</div>';
+                })
+                .catch(error => {
+                    console.error('Error loading cities:', error);
+                    document.getElementById('results').innerHTML = '<div class="error">Error loading cities: ' + error.message + '</div>';
+                });
+        }
+
+        // Load municipalities based on city selection
+        function loadMunicipalities() {
+            const cityId = document.getElementById('city-filter').value;
+            const municipalityFilter = document.getElementById('municipality-filter');
+            const zoneFilter = document.getElementById('zone-filter');
+            
+            console.log('Loading municipalities for city:', cityId);
+            
+            // Clear and disable dependent dropdowns
+            municipalityFilter.innerHTML = '<option value="">Select Municipality</option>';
+            municipalityFilter.disabled = true;
+            zoneFilter.innerHTML = '<option value="">Select Zone</option>';
+            zoneFilter.disabled = true;
+
+            if (cityId) {
+                fetch(`http://localhost:5001/municipalities/by-city/${cityId}`)
+                    .then(response => {
+                        console.log('Municipalities response status:', response.status);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Municipalities data:', data);
+                        if (data && data.length > 0) {
+                            data.forEach(municipality => {
+                                const option = document.createElement('option');
+                                option.value = municipality.mun_id;
+                                option.textContent = municipality.name;
+                                municipalityFilter.appendChild(option);
+                            });
+                        } else {
+                            municipalityFilter.innerHTML = '<option value="">No municipalities available</option>';
+                        }
+                        municipalityFilter.disabled = false;
+                        document.getElementById('results').innerHTML = '<div class="success">Municipalities loaded successfully!</div>';
+                    })
+                    .catch(error => {
+                        console.error('Error loading municipalities:', error);
+                        municipalityFilter.innerHTML = '<option value="">Error loading municipalities</option>';
+                        municipalityFilter.disabled = false;
+                        document.getElementById('results').innerHTML = '<div class="error">Error loading municipalities: ' + error.message + '</div>';
+                    });
+            } else {
+                municipalityFilter.disabled = true;
+                zoneFilter.disabled = true;
+            }
+        }
+
+        // Load zones based on municipality selection
+        function loadZones() {
+            const municipalityId = document.getElementById('municipality-filter').value;
+            const zoneFilter = document.getElementById('zone-filter');
+            
+            console.log('Loading zones for municipality:', municipalityId);
+            
+            zoneFilter.innerHTML = '<option value="">Select Zone</option>';
+            zoneFilter.disabled = true;
+
+            if (municipalityId) {
+                fetch(`http://localhost:5001/zones/by-municipality/${municipalityId}`)
+                    .then(response => {
+                        console.log('Zones response status:', response.status);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Zones data:', data);
+                        if (data && data.length > 0) {
+                            data.forEach(zone => {
+                                const option = document.createElement('option');
+                                option.value = zone.zone_id;
+                                option.textContent = zone.name;
+                                zoneFilter.appendChild(option);
+                            });
+                        } else {
+                            zoneFilter.innerHTML = '<option value="">No zones available</option>';
+                        }
+                        zoneFilter.disabled = false;
+                        document.getElementById('results').innerHTML = '<div class="success">Zones loaded successfully!</div>';
+                    })
+                    .catch(error => {
+                        console.error('Error loading zones:', error);
+                        zoneFilter.innerHTML = '<option value="">Error loading zones</option>';
+                        zoneFilter.disabled = false;
+                        document.getElementById('results').innerHTML = '<div class="error">Error loading zones: ' + error.message + '</div>';
+                    });
+            } else {
+                zoneFilter.disabled = true;
+            }
+        }
+
+        // Load parking lots based on zone selection
+        function loadParkingLots() {
+            const zoneId = document.getElementById('zone-filter').value;
+            
+            console.log('Loading parking lots for zone:', zoneId);
+            
+            if (zoneId) {
+                fetch(`http://localhost:5001/spots/by-zone/${zoneId}`)
+                    .then(response => {
+                        console.log('Spots response status:', response.status);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Spots data:', data);
+                        if (data && data.length > 0) {
+                            document.getElementById('results').innerHTML = '<div class="success">Found ' + data.length + ' parking spots!</div>';
+                        } else {
+                            document.getElementById('results').innerHTML = '<div class="success">No parking spots available in this zone.</div>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading parking lots:', error);
+                        document.getElementById('results').innerHTML = '<div class="error">Error loading parking lots: ' + error.message + '</div>';
+                    });
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, initializing...');
+            loadCities();
+        });
+    </script>
+</body>
+</html> 
