@@ -1,0 +1,82 @@
+use Parking_App;
+-- Cities (e.g., Conakry, Nzérékoré)
+CREATE TABLE cities (
+    city_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    country VARCHAR(50) DEFAULT 'Guinea'
+);
+
+-- Municipalities (e.g., Ratoma, Matam in Conakry)
+CREATE TABLE municipalities (
+    mun_id INT AUTO_INCREMENT PRIMARY KEY,
+    city_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    FOREIGN KEY (city_id) REFERENCES cities(city_id)
+);
+
+-- Zones (e.g., Zone Industrielle in Ratoma)
+CREATE TABLE zones (
+    zone_id INT AUTO_INCREMENT PRIMARY KEY,
+    mun_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    geo_boundary POLYGON,  -- Optional for mapping
+    FOREIGN KEY (mun_id) REFERENCES municipalities(mun_id)
+);
+
+-- Parking Lots (Admin-Managed)
+CREATE TABLE parking_lots (
+    lot_id INT AUTO_INCREMENT PRIMARY KEY,
+    zone_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    address TEXT,
+    hourly_rate DECIMAL(10,2) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (zone_id) REFERENCES zones(zone_id)
+);
+
+-- Parking Slots (e.g., A12, B05)
+CREATE TABLE slots (
+    slot_id INT AUTO_INCREMENT PRIMARY KEY,
+    lot_id INT NOT NULL,
+    slot_number VARCHAR(20) NOT NULL,
+    vehicle_type ENUM('CAR', 'MOTORBIKE', 'TRUCK') DEFAULT 'CAR',
+    status ENUM('AVAILABLE', 'OCCUPIED', 'MAINTENANCE') DEFAULT 'AVAILABLE',
+    FOREIGN KEY (lot_id) REFERENCES parking_lots(lot_id)
+);
+
+
+-- Users (Drivers)
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    phone VARCHAR(20) NOT NULL UNIQUE,  -- +224 format
+    email VARCHAR(100),
+    password_hash VARCHAR(255) NOT NULL,
+    vehicle_plate VARCHAR(15)  -- Default vehicle (e.g., 'ABC1234')
+);
+
+-- Admins (System Managers)
+CREATE TABLE admins (
+    admin_id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100),
+    role ENUM('SUPER_ADMIN', 'MUNICIPAL_ADMIN') NOT NULL
+);
+
+
+-- Reservations
+CREATE TABLE reservations (
+    reservation_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    slot_id INT NOT NULL,
+    vehicle_plate VARCHAR(15) NOT NULL,  -- Allows override
+    start_time DATETIME NOT NULL,
+    end_time DATETIME NOT NULL,
+    total_price DECIMAL(10,2) NOT NULL,
+    status ENUM('PENDING', 'PAID', 'CANCELLED', 'COMPLETED') DEFAULT 'PENDING',
+    payment_method ENUM('ORANGE_MONEY', 'MTN_MONEY', 'CASH', 'CARD'),
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (slot_id) REFERENCES slots(slot_id)
+);
+
+
